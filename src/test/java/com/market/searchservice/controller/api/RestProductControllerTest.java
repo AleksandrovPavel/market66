@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.market.searchservice.model.Product;
 import com.market.searchservice.service.ProductServiceImpl;
+import com.market.searchservice.validators.ProductValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -47,6 +48,9 @@ class RestProductControllerTest {
 
     @MockBean
     private ProductServiceImpl productService;
+
+    @MockBean
+    ProductValidator productValidator;
 
     @Autowired
     MockMvc mockMvc;

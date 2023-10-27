@@ -53,4 +53,9 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(ProductNotFoundException::new);
         productRepository.delete(productDelete);
     }
+
+    @Override
+    public Optional<Product> findByArticleNumber(Long articleNumber) {
+        return productRepository.findByArticleNumber(articleNumber);
+    }
 }
