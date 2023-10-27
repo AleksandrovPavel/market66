@@ -1,12 +1,16 @@
 package com.market.searchservice.controller.api;
 
 
+import com.market.searchservice.exception.*;
 import com.market.searchservice.model.Product;
 import com.market.searchservice.model.dto.ProductDto;
 import com.market.searchservice.service.ProductService;
+import com.market.searchservice.validators.ProductValidator;
+import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,11 +22,13 @@ public class RestProductController {
 
     private final ProductService productService;
     private final ModelMapper modelMapper;
+    private final ProductValidator productValidator;
 
     public RestProductController(ProductService productService,
-                                 ModelMapper modelMapper) {
+                                 ModelMapper modelMapper, ProductValidator productValidator) {
         this.productService = productService;
         this.modelMapper = modelMapper;
+        this.productValidator = productValidator;
     }
 
     @GetMapping()
@@ -41,17 +47,29 @@ public class RestProductController {
     }
 
     @PostMapping()
-    public ResponseEntity<HttpStatus> saveProduct(@RequestBody ProductDto productDto) {
+    public ResponseEntity<HttpStatus> saveProduct(@RequestBody @Valid ProductDto productDto,
+                                                  BindingResult bindingResult) {
         Product product = convertToProduct(productDto);
+        productValidator.validate(product, bindingResult);
+
+        if (bindingResult.hasErrors()) {
+            ErrorsUtil.returnErrorsToClient(bindingResult);
+        }
+
         productService.saveProduct(product);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @PatchMapping("/{product-id}")
-    public ResponseEntity<HttpStatus> updateProduct(@RequestBody ProductDto productDto,
+    public ResponseEntity<HttpStatus> updateProduct(@RequestBody @Valid ProductDto ProductDto,
+                                                    BindingResult bindingResult,
                                                     @PathVariable("product-id") Long productId) {
 
-        Product product = convertToProduct(productDto);
+        Product product = convertToProduct(ProductDto);
+        if (bindingResult.hasErrors()) {
+            ErrorsUtil.returnErrorsToClient(bindingResult);
+        }
+
         productService.updateProduct(productId, product);
         return ResponseEntity.ok(HttpStatus.OK);
     }
@@ -60,6 +78,20 @@ public class RestProductController {
     public ResponseEntity<HttpStatus> deleteProduct(@PathVariable("product-id") Long productId) {
         productService.deleteProduct(productId);
         return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @ExceptionHandler
+    private ResponseEntity<ProductErrorResponse> handleException(ProductNotFoundException e) {
+        ProductErrorResponse response = new ProductErrorResponse(
+                "Продукт с таким индентификатором не найден!"
+        );
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler
+    private ResponseEntity<MeasurementErrorResponse> handleException(MeasurementException e) {
+        MeasurementErrorResponse response = new MeasurementErrorResponse(e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     private Product convertToProduct(ProductDto productDto) {

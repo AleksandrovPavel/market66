@@ -98,4 +98,14 @@ class ProductServiceImplTest {
         assert product != null;
         verify(productRepository).delete(product);
     }
+
+    @Test
+    void findByArticleNumber() {
+        when(productRepository.findByArticleNumber(productId)).thenReturn(Optional.ofNullable(product));
+        Optional<Product> result = productService.findByArticleNumber(productId);
+        Optional<Product> productOptional = Optional.ofNullable(product);
+        assertNotNull(result);
+        assertEquals(productOptional, result);
+
+    }
 }
